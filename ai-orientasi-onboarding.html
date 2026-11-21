@@ -1,0 +1,1780 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Agent Pendamping Orientasi Anggota Baru</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --border: #E2E8F0;
+      --primary: #0F62FE;
+      --primary-light: #EBF3FF;
+      --accent: #10B981;
+      --accent-light: #ECFDF5;
+      --warn: #F59E0B;
+      --warn-light: #FFFBEB;
+      --purple: #7C3AED;
+      --purple-light: #F5F3FF;
+      --red: #E11D48;
+      --red-light: #FFF1F2;
+      --text: #0F172A;
+      --text-muted: #64748B;
+      --text-light: #94A3B8;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 1px 3px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.06);
+      --shadow-hover: 0 4px 12px rgba(15,23,42,.10), 0 8px 32px rgba(15,23,42,.08);
+      --transition: .22s cubic-bezier(.4,0,.2,1);
+    }
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; font-size: 14px; }
+
+    /* LAYOUT */
+    .app-shell { display: flex; min-height: 100vh; }
+    .sidebar { width: 240px; min-height: 100vh; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 10; }
+    .main-wrap { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 28px; height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px; position: sticky; top: 0; z-index: 9; }
+    .content-area { padding: 24px 28px 40px; flex: 1; }
+
+    /* PAGE VIEWS */
+    .page-view { display: none; animation: fadeIn .25s ease; }
+    .page-view.active { display: block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+    /* SIDEBAR */
+    .sidebar-logo { padding: 20px 20px 16px; border-bottom: 1px solid var(--border); }
+    .logo-mark { display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 36px; height: 36px; background: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .logo-text { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; }
+    .logo-sub { font-size: 11px; font-weight: 500; color: var(--text-muted); }
+    .sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+    .nav-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-light); padding: 10px 10px 6px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); font-size: 13.5px; font-weight: 500; color: var(--text-muted); margin-bottom: 2px; user-select: none; }
+    .nav-item:hover { background: var(--bg); color: var(--text); }
+    .nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+    .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; color: inherit; }
+    .nav-badge { margin-left: auto; font-size: 11px; font-weight: 700; background: var(--primary); color: #fff; border-radius: 20px; padding: 1px 7px; }
+    .sidebar-footer { padding: 12px 10px 16px; border-top: 1px solid var(--border); }
+    .user-mini { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--radius-sm); }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role-label { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* TOPBAR */
+    .topbar-left { display: flex; flex-direction: column; }
+    .topbar-title { font-size: 16px; font-weight: 800; color: var(--text); line-height: 1.2; }
+    .topbar-sub { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+    /* ROLE SWITCHER */
+    .role-switcher { display: flex; align-items: center; background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px; }
+    .role-btn { padding: 6px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--text-muted); transition: var(--transition); white-space: nowrap; }
+    .role-btn.active { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(15,98,254,.25); }
+    .ai-badge { display: flex; align-items: center; gap: 6px; background: var(--accent-light); color: var(--accent); font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px; border: 1px solid #A7F3D0; }
+    .ai-badge svg { width: 13px; height: 13px; }
+    .pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; display: inline-block; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+    .icon-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: var(--transition); color: var(--text-muted); }
+    .icon-btn:hover { background: var(--bg); border-color: var(--primary); color: var(--primary); }
+    .icon-btn svg { width: 16px; height: 16px; }
+
+    /* PAGE HEADER BANNER */
+    .page-banner { background: linear-gradient(135deg, var(--primary-light) 0%, #F0FDF4 100%); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .page-banner-title { font-size: 20px; font-weight: 800; color: var(--text); }
+    .page-banner-sub { font-size: 13px; color: var(--text-muted); font-weight: 500; margin-top: 3px; }
+    .page-banner-icon { width: 52px; height: 52px; border-radius: 14px; background: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .page-banner-icon svg { width: 24px; height: 24px; color: #fff; }
+
+    /* BENTO GRID */
+    .bento-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .g-12 { grid-column: span 12; }
+    .g-8  { grid-column: span 8; }
+    .g-7  { grid-column: span 7; }
+    .g-6  { grid-column: span 6; }
+    .g-5  { grid-column: span 5; }
+    .g-4  { grid-column: span 4; }
+    .g-3  { grid-column: span 3; }
+
+    /* CARD */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); transition: box-shadow var(--transition), transform var(--transition); }
+    .card:hover { box-shadow: var(--shadow-hover); }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 7px; }
+    .card-title svg { width: 16px; height: 16px; color: var(--primary); }
+    .card-sub { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+
+    /* STAT CARDS */
+    .stat-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 20px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); transition: var(--transition); cursor: default; }
+    .stat-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+    .stat-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+    .stat-icon svg { width: 18px; height: 18px; }
+    .stat-val { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1; }
+    .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-top: 4px; }
+    .stat-trend { display: flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; margin-top: 6px; }
+
+    /* PROGRESS */
+    .progress-wrap { margin: 10px 0; }
+    .progress-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; font-size: 12.5px; font-weight: 600; color: var(--text); }
+    .progress-track { height: 10px; background: var(--bg); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+    .progress-fill { height: 100%; border-radius: 999px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+    .progress-fill.green { background: linear-gradient(90deg,#10B981,#34D399); }
+    .progress-fill.blue  { background: linear-gradient(90deg,#0F62FE,#60A5FA); }
+    .progress-fill.warn  { background: linear-gradient(90deg,#F59E0B,#FCD34D); }
+    .progress-fill.purple{ background: linear-gradient(90deg,#7C3AED,#A78BFA); }
+
+    /* CHIP / BADGE */
+    .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+    .chip-blue   { background: var(--primary-light); color: var(--primary); }
+    .chip-green  { background: var(--accent-light);  color: var(--accent); }
+    .chip-warn   { background: var(--warn-light);    color: var(--warn); }
+    .chip-gray   { background: #F1F5F9;              color: var(--text-muted); }
+    .chip-purple { background: var(--purple-light);  color: var(--purple); }
+    .chip-red    { background: var(--red-light);     color: var(--red); }
+
+    /* BUDDY MATCH */
+    .buddy-profile { display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--bg); border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 14px; }
+    .buddy-avatar { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; flex-shrink: 0; }
+    .buddy-info { flex: 1; }
+    .buddy-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .buddy-role { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+    .match-score { text-align: center; }
+    .match-pct { font-size: 28px; font-weight: 800; color: var(--accent); line-height: 1; }
+    .match-label { font-size: 10.5px; color: var(--text-muted); font-weight: 600; }
+    .interest-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
+    .icebreaker-box { background: linear-gradient(135deg,#EBF3FF 0%,#F0FDF4 100%); border: 1px solid #BFDBFE; border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; color: var(--text); font-style: italic; line-height: 1.6; min-height: 54px; display: flex; align-items: center; margin-bottom: 12px; transition: opacity .2s, transform .2s; }
+
+    /* MILESTONE */
+    .phase-block { margin-bottom: 18px; }
+    .phase-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+    .phase-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .milestone-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); border: 1px solid transparent; margin-bottom: 4px; user-select: none; }
+    .milestone-item:hover { background: var(--bg); border-color: var(--border); }
+    .milestone-item.done { background: var(--accent-light); border-color: #A7F3D0; }
+    .milestone-item.done .ms-text { text-decoration: line-through; color: var(--text-muted); }
+    .ms-check { width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: var(--transition); background: var(--surface); }
+    .milestone-item.done .ms-check { background: var(--accent); border-color: var(--accent); }
+    .ms-check svg { width: 12px; height: 12px; color: #fff; display: none; }
+    .milestone-item.done .ms-check svg { display: block; }
+    .ms-text { font-size: 13px; font-weight: 500; color: var(--text); flex: 1; }
+    .ms-tag { font-size: 10.5px; }
+
+    /* CHAT */
+    .chat-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; min-height: 110px; max-height: 200px; overflow-y: auto; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .chat-msg { display: flex; gap: 8px; align-items: flex-start; }
+    .chat-msg.user { flex-direction: row-reverse; }
+    .chat-avatar { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+    .chat-bubble { max-width: 86%; padding: 8px 11px; border-radius: 10px; font-size: 12.5px; line-height: 1.55; font-weight: 500; }
+    .chat-bubble.ai   { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-top-left-radius: 3px; }
+    .chat-bubble.user { background: var(--primary); color: #fff; border-top-right-radius: 3px; }
+    .quick-qs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .quick-q { font-size: 12px; font-weight: 600; padding: 6px 11px; border-radius: 999px; border: 1.5px solid var(--primary); color: var(--primary); background: var(--primary-light); cursor: pointer; transition: var(--transition); }
+    .quick-q:hover { background: var(--primary); color: #fff; }
+    .mood-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .mood-label { font-size: 12.5px; font-weight: 600; color: var(--text-muted); }
+    .mood-btn { font-size: 18px; cursor: pointer; border-radius: 8px; padding: 4px 8px; border: 1.5px solid transparent; transition: var(--transition); }
+    .mood-btn:hover, .mood-btn.active { border-color: var(--primary); background: var(--primary-light); transform: scale(1.2); }
+
+    /* FAQ SEARCH */
+    .search-wrap { position: relative; margin-bottom: 14px; }
+    .search-input { width: 100%; padding: 10px 14px 10px 38px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); background: var(--bg); font-family: inherit; font-size: 13px; font-weight: 500; color: var(--text); outline: none; transition: var(--transition); }
+    .search-input:focus { border-color: var(--primary); background: var(--surface); box-shadow: 0 0 0 3px rgba(15,98,254,.1); }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-light); width: 15px; height: 15px; }
+    .faq-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+    .faq-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); cursor: pointer; transition: var(--transition); }
+    .faq-item:hover { border-color: var(--primary); background: var(--primary-light); }
+    .faq-item:hover .faq-title { color: var(--primary); }
+    .faq-icon-wrap { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .faq-icon-wrap svg { width: 15px; height: 15px; }
+    .faq-title { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+    .faq-desc { font-size: 11.5px; color: var(--text-muted); font-weight: 500; margin-top: 1px; }
+    .faq-item.hidden { display: none; }
+
+    /* TIMELINE */
+    .timeline-item { display: flex; gap: 12px; padding-bottom: 16px; position: relative; }
+    .timeline-item::before { content:''; position: absolute; left: 15px; top: 28px; bottom: 0; width: 2px; background: var(--border); }
+    .timeline-item:last-child::before { display: none; }
+    .tl-dot { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 1; }
+    .tl-dot svg { width: 13px; height: 13px; }
+    .tl-content { flex: 1; }
+    .tl-title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .tl-meta  { font-size: 11.5px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+
+    /* TABLE */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; padding: 10px 12px; border-bottom: 2px solid var(--border); text-align: left; background: var(--bg); }
+    .data-table td { font-size: 13px; padding: 11px 12px; border-bottom: 1px solid var(--border); color: var(--text); font-weight: 500; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--bg); }
+
+    /* FORM */
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 12.5px; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block; }
+    .form-control { width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); font-family: inherit; font-size: 13px; font-weight: 500; color: var(--text); background: var(--bg); outline: none; transition: var(--transition); }
+    .form-control:focus { border-color: var(--primary); background: var(--surface); box-shadow: 0 0 0 3px rgba(15,98,254,.1); }
+    select.form-control { cursor: pointer; }
+    .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    /* BUTTONS */
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: var(--transition); font-family: inherit; }
+    .btn svg { width: 15px; height: 15px; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: #0050CC; box-shadow: 0 4px 14px rgba(15,98,254,.30); transform: translateY(-1px); }
+    .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+    .btn-outline:hover { background: var(--primary-light); transform: translateY(-1px); }
+    .btn-ghost { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+    .btn-green { background: var(--accent); color: #fff; }
+    .btn-green:hover { background: #059669; box-shadow: 0 4px 14px rgba(16,185,129,.30); transform: translateY(-1px); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-block { width: 100%; justify-content: center; }
+
+    /* TOAST */
+    #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--text); color: #fff; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; box-shadow: 0 8px 32px rgba(15,23,42,.18); min-width: 280px; max-width: 360px; pointer-events: all; animation: toastIn .3s cubic-bezier(.4,0,.2,1); }
+    .toast.success { background: #065F46; }
+    .toast.info    { background: var(--primary); }
+    .toast.warn    { background: #92400E; }
+    .toast svg { width: 16px; height: 16px; flex-shrink: 0; }
+    @keyframes toastIn { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
+
+    /* MISC */
+    .divider { height: 1px; background: var(--border); margin: 14px 0; }
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+    .empty-state svg { width: 40px; height: 40px; margin: 0 auto 12px; display: block; color: var(--text-light); }
+    .empty-state p { font-size: 13.5px; font-weight: 600; }
+    .empty-state span { font-size: 12px; }
+
+    /* PROFILE MODAL */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 9000; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+    .modal-backdrop.open { opacity: 1; pointer-events: all; }
+    .modal { background: var(--surface); border-radius: 20px; width: 100%; max-width: 440px; box-shadow: 0 20px 60px rgba(15,23,42,.22); transform: translateY(16px) scale(.97); transition: transform .28s cubic-bezier(.4,0,.2,1), opacity .25s ease; opacity: 0; overflow: hidden; }
+    .modal-backdrop.open .modal { transform: translateY(0) scale(1); opacity: 1; }
+    .modal-header { padding: 20px 22px 0; display: flex; align-items: center; justify-content: space-between; }
+    .modal-title { font-size: 15px; font-weight: 800; color: var(--text); }
+    .modal-close { width: 30px; height: 30px; border-radius: 8px; border: none; background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: var(--transition); }
+    .modal-close:hover { background: var(--border); color: var(--text); }
+    .modal-close svg { width: 15px; height: 15px; }
+    .modal-body { padding: 18px 22px 22px; }
+    .modal-hero { display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--bg); border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 18px; }
+    .modal-av { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; flex-shrink: 0; }
+    .modal-hero-info { flex: 1; }
+    .modal-hero-name { font-size: 17px; font-weight: 800; color: var(--text); }
+    .modal-hero-role { font-size: 12.5px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+    .modal-hero-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .modal-section { margin-bottom: 16px; }
+    .modal-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-light); margin-bottom: 10px; }
+    .modal-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal-info-item { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; }
+    .modal-info-label { font-size: 10.5px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: .05em; }
+    .modal-info-val { font-size: 14px; font-weight: 700; color: var(--text); margin-top: 2px; }
+    .modal-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+    .modal-action-btn { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); cursor: pointer; transition: var(--transition); font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text); width: 100%; }
+    .modal-action-btn:hover { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+    .modal-action-btn.danger:hover { border-color: var(--red); background: var(--red-light); color: var(--red); }
+    .modal-action-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .modal-action-btn .btn-arrow { margin-left: auto; width: 14px; height: 14px; color: var(--text-light); }
+    /* user-mini clickable */
+    .user-mini { cursor: pointer; transition: var(--transition); }
+    .user-mini:hover { background: var(--bg); }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-light); }
+
+    @media(max-width:1200px) { .g-8{grid-column:span 12} .g-7{grid-column:span 12} .g-5{grid-column:span 12} .g-4{grid-column:span 6} .g-3{grid-column:span 6} }
+    @media(max-width:900px)  { .sidebar{width:200px} .main-wrap{margin-left:200px} .stat-cards{grid-template-columns:repeat(2,1fr)} .g-4,.g-3,.g-6{grid-column:span 12} .form-row{grid-template-columns:1fr} }
+    @media(max-width:680px)  { .sidebar{display:none} .main-wrap{margin-left:0} .stat-cards{grid-template-columns:1fr 1fr} .topbar-title{font-size:14px} }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ───────── SIDEBAR ───────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon"><i data-lucide="bot" style="width:18px;height:18px;color:#fff"></i></div>
+        <div>
+          <div class="logo-text">OrientAI</div>
+          <div class="logo-sub">Onboarding System</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Menu Utama</div>
+      <div class="nav-item active" data-page="dashboard"      onclick="navTo('dashboard',this)">      <i data-lucide="layout-dashboard"></i> Dashboard</div>
+      <div class="nav-item"        data-page="direktori"      onclick="navTo('direktori',this)">      <i data-lucide="users"></i> Direktori Buddy <span class="nav-badge">12</span></div>
+      <div class="nav-item"        data-page="milestone"      onclick="navTo('milestone',this)">      <i data-lucide="target"></i> Milestone Saya</div>
+      <div class="nav-item"        data-page="chat"           onclick="navTo('chat',this)">           <i data-lucide="message-circle"></i> Chat AI</div>
+      <div class="nav-item"        data-page="faq"            onclick="navTo('faq',this)">            <i data-lucide="book-open"></i> Panduan &amp; FAQ</div>
+      <div class="nav-label" style="margin-top:8px">Lainnya</div>
+      <div class="nav-item"        data-page="jadwal"         onclick="navTo('jadwal',this)">         <i data-lucide="calendar"></i> Jadwal Sesi</div>
+      <div class="nav-item"        data-page="laporan"        onclick="navTo('laporan',this)">        <i data-lucide="bar-chart-2"></i> Laporan Progress</div>
+      <div class="nav-item"        data-page="pengaturan"     onclick="navTo('pengaturan',this)">     <i data-lucide="settings"></i> Pengaturan</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-mini" onclick="openProfileModal()" title="Lihat detail profil">
+        <div class="avatar" id="sidebar-avatar" style="background:#EBF3FF;color:#0F62FE">BS</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Budi Santoso</div>
+          <div class="user-role-label" id="sidebar-role">Anggota Baru &middot; IT Dept.</div>
+        </div>
+        <i data-lucide="chevron-right" style="width:14px;height:14px;color:var(--text-light);flex-shrink:0"></i>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ───────── MAIN ───────── -->
+  <div class="main-wrap">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title">AI Agent Pendamping Orientasi Anggota Baru</div>
+        <div class="topbar-sub">Sistem Onboarding Cerdas &amp; Buddy Matching Berbasis AI</div>
+      </div>
+      <div class="topbar-right">
+        <div class="ai-badge"><span class="pulse-dot"></span> <i data-lucide="sparkles"></i> AI Aktif</div>
+        <div class="role-switcher">
+          <button class="role-btn active" id="btn-newhire" onclick="switchRole('newhire')">&#128100; Anggota Baru</button>
+          <button class="role-btn"        id="btn-buddy"   onclick="switchRole('buddy')">&#127885; Buddy / Mentor</button>
+        </div>
+        <div class="icon-btn" title="Notifikasi" onclick="showToast('3 notifikasi baru menunggu Anda.','info')"><i data-lucide="bell"></i></div>
+        <div class="icon-btn" title="Profil" onclick="openProfileModal()"><i data-lucide="user-circle"></i></div>
+      </div>
+    </header>
+
+    <div class="content-area">
+
+      <!-- ══════════════════════════════════════════
+           PAGE: DASHBOARD
+      ══════════════════════════════════════════ -->
+      <div class="page-view active" id="page-dashboard">
+        <div class="stat-cards">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#EBF3FF"><i data-lucide="trophy" style="color:#0F62FE"></i></div>
+            <div class="stat-val" id="stat-progress">35%</div>
+            <div class="stat-label">Kesiapan Orientasi</div>
+            <div class="stat-trend" style="color:#10B981"><i data-lucide="trending-up" style="width:13px;height:13px"></i> +5% minggu ini</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#ECFDF5"><i data-lucide="check-circle-2" style="color:#10B981"></i></div>
+            <div class="stat-val" id="stat-tasks">7</div>
+            <div class="stat-label" id="stat-task-label">Tugas Selesai / 15</div>
+            <div class="stat-trend" style="color:#10B981"><i data-lucide="trending-up" style="width:13px;height:13px"></i> 3 minggu terakhir</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#FFFBEB"><i data-lucide="calendar-check" style="color:#F59E0B"></i></div>
+            <div class="stat-val">Hari 18</div>
+            <div class="stat-label">Progress 90-Hari</div>
+            <div class="stat-trend" style="color:#F59E0B"><i data-lucide="clock" style="width:13px;height:13px"></i> 72 hari tersisa</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#F5F3FF"><i data-lucide="users" style="color:#7C3AED"></i></div>
+            <div class="stat-val">94%</div>
+            <div class="stat-label">Skor Buddy Match</div>
+            <div class="stat-trend" style="color:#7C3AED"><i data-lucide="sparkles" style="width:13px;height:13px"></i> AI-Matched</div>
+          </div>
+        </div>
+
+        <div class="bento-grid">
+          <!-- Milestone mini (col 7) -->
+          <div class="card g-7">
+            <div class="card-header">
+              <div>
+                <div class="card-title"><i data-lucide="target"></i> 30-60-90 Hari Milestone</div>
+                <div class="card-sub">Klik item untuk menandai selesai &mdash; progress terupdate otomatis</div>
+              </div>
+              <div>
+                <div class="progress-label" style="margin-bottom:4px"><span style="font-size:11px;color:var(--text-muted)">Total Progress</span><span id="pct-label" style="color:var(--accent);font-weight:800">35%</span></div>
+                <div class="progress-track" style="width:140px"><div class="progress-fill green" id="main-progress-bar" style="width:35%"></div></div>
+              </div>
+            </div>
+            <div class="phase-block">
+              <div class="phase-title"><span class="phase-dot" style="background:#0F62FE"></span><span style="color:#0F62FE">30 Hari Pertama</span><span class="chip chip-blue">Aktif</span></div>
+              <div id="milestones"></div>
+            </div>
+            <div class="phase-block">
+              <div class="phase-title"><span class="phase-dot" style="background:#F59E0B"></span><span style="color:#F59E0B">31&ndash;60 Hari</span><span class="chip chip-warn">Mendatang</span></div>
+              <div id="milestones-60"></div>
+            </div>
+            <div class="phase-block">
+              <div class="phase-title"><span class="phase-dot" style="background:#7C3AED"></span><span style="color:#7C3AED">61&ndash;90 Hari</span><span class="chip chip-gray">Terkunci</span></div>
+              <div id="milestones-90"></div>
+            </div>
+          </div>
+
+          <!-- Buddy Match (col 5) -->
+          <div class="card g-5">
+            <div class="card-header">
+              <div>
+                <div class="card-title"><i data-lucide="user-check"></i> AI Smart Buddy Match</div>
+                <div class="card-sub" id="buddy-subtitle">Pasangan mentor terbaik untuk Anda</div>
+              </div>
+              <span class="chip chip-green"><i data-lucide="sparkles" style="width:11px;height:11px"></i> AI Match</span>
+            </div>
+            <div class="buddy-profile">
+              <div class="buddy-avatar" id="buddy-av" style="background:#F0FDF4;color:#065F46">RW</div>
+              <div class="buddy-info">
+                <div class="buddy-name" id="buddy-name">Rina Wijaya</div>
+                <div class="buddy-role" id="buddy-role">Senior Software Engineer &middot; 5 Thn</div>
+                <div style="margin-top:6px"><span class="chip chip-blue" id="buddy-div">Divisi IT</span></div>
+              </div>
+              <div class="match-score"><div class="match-pct">94%</div><div class="match-label">Match</div></div>
+            </div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px">Kesamaan Minat &amp; Keahlian:</div>
+            <div class="interest-tags" id="interest-tags">
+              <span class="chip chip-blue">&#128013; Python</span>
+              <span class="chip chip-green">&#9729;&#65039; Cloud</span>
+              <span class="chip chip-blue">&#127928; Musik</span>
+              <span class="chip chip-green">&#127939; Lari Pagi</span>
+              <span class="chip chip-blue">&#127919; Agile</span>
+            </div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px">Topik Obrolan AI:</div>
+            <div class="icebreaker-box" id="icebreaker-box">&ldquo;Apa proyek side-project paling seru yang pernah kamu kerjakan di luar jam kantor?&rdquo;</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary btn-sm" onclick="scheduleSession()"><i data-lucide="calendar-plus"></i> Jadwalkan Sesi 1-on-1</button>
+              <button class="btn btn-ghost btn-sm"   onclick="newIcebreaker()"><i data-lucide="shuffle"></i> Topik Baru</button>
+            </div>
+          </div>
+
+          <!-- AI Chat (col 6) -->
+          <div class="card g-6">
+            <div class="card-header">
+              <div>
+                <div class="card-title"><i data-lucide="message-square"></i> AI Onboarding Assistant</div>
+                <div class="card-sub">Tanya apa saja tentang proses orientasi Anda</div>
+              </div>
+              <div class="ai-badge" style="font-size:11px;padding:4px 9px"><span class="pulse-dot"></span> Online</div>
+            </div>
+            <div class="chat-box" id="chat-box">
+              <div class="chat-msg">
+                <div class="chat-avatar" style="background:#EBF3FF;color:#0F62FE">AI</div>
+                <div class="chat-bubble ai">&#128075; Halo Budi! Saya AI Assistant orientasimu. Ada yang bisa saya bantu hari ini?</div>
+              </div>
+            </div>
+            <div style="font-size:11.5px;font-weight:600;color:var(--text-muted);margin-bottom:6px">Pertanyaan Cepat:</div>
+            <div class="quick-qs">
+              <div class="quick-q" onclick="askAI('Apa target minggu pertama saya?')">&#127919; Target minggu pertama?</div>
+              <div class="quick-q" onclick="askAI('Siapa yang harus saya hubungi pertama kali?')">&#128222; Kontak pertama?</div>
+              <div class="quick-q" onclick="askAI('Bagaimana cara mengajukan cuti?')">&#128197; Cara ajukan cuti?</div>
+              <div class="quick-q" onclick="askAI('Apa tools kerja yang wajib disetup?')">&#128296; Tools wajib setup?</div>
+            </div>
+            <div class="divider"></div>
+            <div style="font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:8px">Pulse Check-in Mingguan:</div>
+            <div class="mood-row">
+              <span class="mood-label">Bagaimana perasaanmu minggu ini?</span>
+              <span class="mood-btn" onclick="setMood(this,'Semangat!')">&#128522;</span>
+              <span class="mood-btn" onclick="setMood(this,'Biasa saja')">&#128528;</span>
+              <span class="mood-btn" onclick="setMood(this,'Sedikit Stres')">&#128548;</span>
+              <span class="mood-btn" onclick="setMood(this,'Kelelahan')">&#128564;</span>
+              <span class="mood-btn" onclick="setMood(this,'Sangat Luar Biasa!')">&#129321;</span>
+            </div>
+          </div>
+
+          <!-- FAQ mini (col 6) -->
+          <div class="card g-6">
+            <div class="card-header">
+              <div>
+                <div class="card-title"><i data-lucide="search"></i> Panduan &amp; FAQ Cepat</div>
+                <div class="card-sub">Cari panduan penting organisasi secara instan</div>
+              </div>
+              <span class="chip chip-gray" id="faq-count">12 panduan</span>
+            </div>
+            <div class="search-wrap">
+              <i data-lucide="search" class="search-icon"></i>
+              <input class="search-input" id="faq-input" type="text" placeholder="Cari panduan, kebijakan, prosedur..." oninput="filterFaq()" />
+            </div>
+            <div class="faq-list" id="faq-list"></div>
+          </div>
+
+          <!-- Mentor Panel (shown in buddy mode) -->
+          <div class="card g-12" id="mentor-panel" style="display:none">
+            <div class="card-header">
+              <div>
+                <div class="card-title"><i data-lucide="users"></i> Pantau Progress Mentee Anda</div>
+                <div class="card-sub">Daftar anggota baru yang Anda dampingi</div>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="showToast('Laporan progress berhasil dikirim ke HR.','success')"><i data-lucide="send"></i> Kirim Laporan ke HR</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;" id="mentee-cards"></div>
+          </div>
+
+          <!-- Activity (col 4 / full in buddy) -->
+          <div class="card g-4" id="activity-card">
+            <div class="card-header"><div class="card-title"><i data-lucide="activity"></i> Aktivitas Terkini</div></div>
+            <div id="activity-list"></div>
+          </div>
+        </div>
+      </div><!-- end page-dashboard -->
+
+      <!-- ══════════════════════════════════════════
+           PAGE: DIREKTORI BUDDY
+      ══════════════════════════════════════════ -->
+      <div class="page-view" id="page-direktori">
+        <div class="page-banner">
+          <div>
+            <div class="page-banner-title">Direktori Buddy &amp; Mentor</div>
+            <div class="page-banner-sub">Temukan dan lihat profil seluruh buddy/mentor aktif di organisasi</div>
+          </div>
+          <div class="page-banner-icon"><i data-lucide="users"></i></div>
+        </div>
+        <div class="search-wrap" style="max-width:420px;margin-bottom:18px">
+          <i data-lucide="search" class="search-icon"></i>
+          <input class="search-input" id="dir-search" type="text" placeholder="Cari nama, divisi, atau keahlian..." oninput="filterDir()" />
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;" id="dir-grid"></div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           PAGE: MILESTONE SAYA
+      ══════════════════════════════════════════ -->
+      <div class="page-view" id="page-milestone">
+        <div class="page-banner">
+          <div>
+            <div class="page-banner-title">Milestone Saya &mdash; 30/60/90 Hari</div>
+            <div class="page-banner-sub">Pantau dan tandai selesai semua tugas orientasi Anda</div>
+          </div>
+          <div class="page-banner-icon" style="background:var(--accent)"><i data-lucide="target"></i></div>
+        </div>
+        <div class="stat-cards" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#EBF3FF"><i data-lucide="check-square" style="color:#0F62FE"></i></div>
+            <div class="stat-val" id="ms-page-done">7</div>
+            <div class="stat-label">Tugas Selesai</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#FFFBEB"><i data-lucide="clock" style="color:#F59E0B"></i></div>
+            <div class="stat-val" id="ms-page-remaining">8</div>
+            <div class="stat-label">Tugas Tersisa</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#ECFDF5"><i data-lucide="trophy" style="color:#10B981"></i></div>
+            <div class="stat-val" id="ms-page-pct">47%</div>
+            <div class="stat-label">Total Progress</div>
+          </div>
+        </div>
+        <div class="bento-grid">
+          <div class="card g-12">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="flag"></i> Semua Milestone</div>
+              <div>
+                <div class="progress-label" style="margin-bottom:4px"><span style="font-size:11px;color:var(--text-muted)">Progress Keseluruhan</span><span id="ms-page-bar-label" style="color:var(--accent);font-weight:800">47%</span></div>
+                <div class="progress-track" style="width:200px"><div class="progress-fill green" id="ms-page-bar" style="width:47%"></div></div>
+              </div>
+            </div>
+            <div class="phase-block">
+              <div class="phase-title"><span class="phase-dot" style="background:#0F62FE"></span><span style="color:#0F62FE">30 Hari Pertama</span><span class="chip chip-blue">Aktif</span></div>
+              <div id="ms-p-30"></div>
+            </div>
+            <div class="phase-block">
+              <div class="phase-title"><span class="phase-dot" style="background:#F59E0B"></span><span style="color:#F59E0B">31&ndash;60 Hari</span><span class="chip chip-warn">Mendatang</span></div>
+              <div id="ms-p-60"></div>
+            </div>
+            <div class="phase-block">
+              <div class="phase-title"><span class="phase-dot" style="background:#7C3AED"></span><span style="color:#7C3AED">61&ndash;90 Hari</span><span class="chip chip-gray">Terkunci</span></div>
+              <div id="ms-p-90"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           PAGE: CHAT AI
+      ══════════════════════════════════════════ -->
+      <div class="page-view" id="page-chat">
+        <div class="page-banner">
+          <div>
+            <div class="page-banner-title">AI Onboarding Assistant</div>
+            <div class="page-banner-sub">Tanya apa saja &mdash; AI siap membantu proses orientasi Anda 24/7</div>
+          </div>
+          <div class="page-banner-icon" style="background:#7C3AED"><i data-lucide="bot"></i></div>
+        </div>
+        <div class="bento-grid">
+          <div class="card g-8">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="message-square"></i> Ruang Chat AI</div>
+              <div class="ai-badge"><span class="pulse-dot"></span> AI Online</div>
+            </div>
+            <div class="chat-box" id="chat-box-full" style="max-height:380px;min-height:200px">
+              <div class="chat-msg">
+                <div class="chat-avatar" style="background:#EBF3FF;color:#0F62FE">AI</div>
+                <div class="chat-bubble ai">&#128075; Halo! Saya AI Assistant orientasi OrientAI. Silakan tanyakan apa saja terkait proses onboarding, kebijakan perusahaan, atau kebutuhan orientasi Anda. Saya siap membantu!</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <input class="form-control" id="chat-input-full" type="text" placeholder="Tulis pertanyaan Anda..." onkeydown="if(event.key==='Enter')sendChatFull()" style="flex:1" />
+              <button class="btn btn-primary" onclick="sendChatFull()"><i data-lucide="send"></i></button>
+            </div>
+          </div>
+          <div class="card g-4">
+            <div class="card-header"><div class="card-title"><i data-lucide="zap"></i> Pertanyaan Populer</div></div>
+            <div style="display:flex;flex-direction:column;gap:7px;" id="popular-qs"></div>
+            <div class="divider"></div>
+            <div style="font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:10px">&#128200; Pulse Check-in</div>
+            <div class="mood-row" style="justify-content:center;gap:12px">
+              <span class="mood-btn" style="font-size:22px" onclick="setMood(this,'Semangat!')">&#128522;</span>
+              <span class="mood-btn" style="font-size:22px" onclick="setMood(this,'Biasa saja')">&#128528;</span>
+              <span class="mood-btn" style="font-size:22px" onclick="setMood(this,'Sedikit Stres')">&#128548;</span>
+              <span class="mood-btn" style="font-size:22px" onclick="setMood(this,'Kelelahan')">&#128564;</span>
+              <span class="mood-btn" style="font-size:22px" onclick="setMood(this,'Sangat Luar Biasa!')">&#129321;</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           PAGE: PANDUAN & FAQ
+      ══════════════════════════════════════════ -->
+      <div class="page-view" id="page-faq">
+        <div class="page-banner">
+          <div>
+            <div class="page-banner-title">Panduan &amp; FAQ Organisasi</div>
+            <div class="page-banner-sub">Semua panduan, kebijakan, dan prosedur penting dalam satu tempat</div>
+          </div>
+          <div class="page-banner-icon" style="background:#10B981"><i data-lucide="book-open"></i></div>
+        </div>
+        <div class="search-wrap" style="max-width:500px;margin-bottom:18px">
+          <i data-lucide="search" class="search-icon"></i>
+          <input class="search-input" id="faq-full-input" type="text" placeholder="Cari panduan, kebijakan, prosedur..." oninput="filterFaqFull()" />
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;" id="faq-full-grid"></div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           PAGE: JADWAL SESI
+      ══════════════════════════════════════════ -->
+      <div class="page-view" id="page-jadwal">
+        <div class="page-banner">
+          <div>
+            <div class="page-banner-title">Jadwal Sesi 1-on-1</div>
+            <div class="page-banner-sub">Rencanakan dan kelola sesi pertemuan dengan Buddy Mentor Anda</div>
+          </div>
+          <div class="page-banner-icon" style="background:#F59E0B"><i data-lucide="calendar"></i></div>
+        </div>
+        <div class="bento-grid">
+          <div class="card g-7">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="calendar-plus"></i> Jadwalkan Sesi Baru</div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Jenis Sesi</label>
+                <select class="form-control">
+                  <option>1-on-1 dengan Buddy</option>
+                  <option>Review Milestone</option>
+                  <option>Knowledge Sharing</option>
+                  <option>Check-in Mingguan</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Buddy / Peserta</label>
+                <select class="form-control">
+                  <option>Rina Wijaya (Buddy Utama)</option>
+                  <option>Desi Pramono (HR)</option>
+                  <option>Ahmad Fauzan (Manager)</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Tanggal</label>
+                <input class="form-control" type="date" value="2024-12-02" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Waktu</label>
+                <input class="form-control" type="time" value="09:00" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Platform</label>
+              <select class="form-control">
+                <option>Google Meet</option>
+                <option>Zoom</option>
+                <option>Tatap Muka (Ruang Meeting A)</option>
+                <option>Microsoft Teams</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Agenda / Catatan</label>
+              <input class="form-control" type="text" placeholder="Contoh: Diskusi rencana proyek bulan pertama..." />
+            </div>
+            <button class="btn btn-primary btn-block" onclick="showToast('Sesi berhasil dijadwalkan! Undangan dikirim ke Rina Wijaya.','success')"><i data-lucide="calendar-check"></i> Konfirmasi &amp; Kirim Undangan</button>
+          </div>
+          <div class="card g-5">
+            <div class="card-header"><div class="card-title"><i data-lucide="clock"></i> Sesi Mendatang</div></div>
+            <div id="schedule-list"></div>
+          </div>
+          <div class="card g-12">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="history"></i> Riwayat Sesi</div>
+            </div>
+            <table class="data-table">
+              <thead><tr><th>Tanggal</th><th>Jenis Sesi</th><th>Dengan</th><th>Platform</th><th>Status</th><th>Catatan</th></tr></thead>
+              <tbody id="session-history"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           PAGE: LAPORAN PROGRESS
+      ══════════════════════════════════════════ -->
+      <div class="page-view" id="page-laporan">
+        <div class="page-banner">
+          <div>
+            <div class="page-banner-title">Laporan Progress Orientasi</div>
+            <div class="page-banner-sub">Pantau perkembangan onboarding secara menyeluruh dan analitik</div>
+          </div>
+          <div class="page-banner-icon" style="background:#7C3AED"><i data-lucide="bar-chart-2"></i></div>
+        </div>
+        <div class="stat-cards">
+          <div class="stat-card"><div class="stat-icon" style="background:#EBF3FF"><i data-lucide="trophy" style="color:#0F62FE"></i></div><div class="stat-val" id="rpt-pct">47%</div><div class="stat-label">Progress Keseluruhan</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#ECFDF5"><i data-lucide="check-circle" style="color:#10B981"></i></div><div class="stat-val" id="rpt-done">7</div><div class="stat-label">Milestone Selesai</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#FFFBEB"><i data-lucide="users" style="color:#F59E0B"></i></div><div class="stat-val">3</div><div class="stat-label">Sesi 1-on-1 Selesai</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#F5F3FF"><i data-lucide="star" style="color:#7C3AED"></i></div><div class="stat-val">4.8</div><div class="stat-label">Rating Buddy Match</div></div>
+        </div>
+        <div class="bento-grid">
+          <div class="card g-6">
+            <div class="card-header"><div class="card-title"><i data-lucide="pie-chart"></i> Progress per Fase</div></div>
+            <div id="phase-progress-list"></div>
+          </div>
+          <div class="card g-6">
+            <div class="card-header"><div class="card-title"><i data-lucide="trending-up"></i> Aktivitas Mingguan</div></div>
+            <div id="weekly-activity"></div>
+          </div>
+          <div class="card g-12">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="file-text"></i> Rincian Milestone</div>
+              <button class="btn btn-outline btn-sm" onclick="showToast('Laporan PDF sedang diunduh...','info')"><i data-lucide="download"></i> Unduh PDF</button>
+            </div>
+            <table class="data-table">
+              <thead><tr><th>Milestone</th><th>Fase</th><th>Kategori</th><th>Status</th><th>Tanggal Selesai</th></tr></thead>
+              <tbody id="report-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           PAGE: PENGATURAN
+      ══════════════════════════════════════════ -->
+      <div class="page-view" id="page-pengaturan">
+        <div class="page-banner">
+          <div>
+            <div class="page-banner-title">Pengaturan Akun</div>
+            <div class="page-banner-sub">Kelola profil, preferensi notifikasi, dan konfigurasi sistem</div>
+          </div>
+          <div class="page-banner-icon" style="background:#64748B"><i data-lucide="settings"></i></div>
+        </div>
+        <div class="bento-grid">
+          <div class="card g-6">
+            <div class="card-header"><div class="card-title"><i data-lucide="user"></i> Profil Saya</div></div>
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:14px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border)">
+              <div class="avatar" style="width:56px;height:56px;font-size:20px;background:#EBF3FF;color:#0F62FE" id="set-avatar">BS</div>
+              <div>
+                <div style="font-size:16px;font-weight:700" id="set-name">Budi Santoso</div>
+                <div style="font-size:12px;color:var(--text-muted)" id="set-role">Junior Developer &middot; IT Development</div>
+                <div style="margin-top:6px"><span class="chip chip-blue">Anggota Baru</span> <span class="chip chip-green">Hari ke-18</span></div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Nama Lengkap</label><input class="form-control" type="text" value="Budi Santoso" /></div>
+              <div class="form-group"><label class="form-label">NIP / Employee ID</label><input class="form-control" type="text" value="EMP-2024-0118" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Divisi</label><input class="form-control" type="text" value="IT Development" /></div>
+              <div class="form-group"><label class="form-label">Jabatan</label><input class="form-control" type="text" value="Junior Developer" /></div>
+            </div>
+            <div class="form-group"><label class="form-label">Email Kantor</label><input class="form-control" type="email" value="budi.santoso@perusahaan.co.id" /></div>
+            <div class="form-group"><label class="form-label">Nomor HP</label><input class="form-control" type="text" value="+62 812-3456-7890" /></div>
+            <button class="btn btn-primary btn-block" onclick="showToast('Profil berhasil disimpan!','success')"><i data-lucide="save"></i> Simpan Perubahan</button>
+          </div>
+          <div class="card g-6">
+            <div class="card-header"><div class="card-title"><i data-lucide="bell"></i> Preferensi Notifikasi</div></div>
+            <div id="notif-settings"></div>
+            <div class="divider"></div>
+            <div class="card-header" style="margin-bottom:12px"><div class="card-title"><i data-lucide="shield"></i> Keamanan Akun</div></div>
+            <div class="form-group"><label class="form-label">Password Saat Ini</label><input class="form-control" type="password" placeholder="&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;" /></div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Password Baru</label><input class="form-control" type="password" placeholder="Minimal 8 karakter" /></div>
+              <div class="form-group"><label class="form-label">Konfirmasi Password</label><input class="form-control" type="password" placeholder="Ulangi password baru" /></div>
+            </div>
+            <button class="btn btn-outline btn-block" onclick="showToast('Password berhasil diperbarui!','success')"><i data-lucide="lock"></i> Perbarui Password</button>
+          </div>
+          <div class="card g-12">
+            <div class="card-header"><div class="card-title"><i data-lucide="palette"></i> Preferensi Tampilan</div></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn-primary btn-sm" onclick="showToast('Tema terang aktif.','info')"><i data-lucide="sun"></i> Tema Terang</button>
+              <button class="btn btn-ghost btn-sm"   onclick="showToast('Mode gelap akan hadir segera!','warn')"><i data-lucide="moon"></i> Tema Gelap</button>
+              <button class="btn btn-ghost btn-sm"   onclick="showToast('Bahasa Indonesia aktif.','info')"><i data-lucide="globe"></i> Bahasa Indonesia</button>
+              <button class="btn btn-ghost btn-sm"   onclick="showToast('Notifikasi email diaktifkan.','success')"><i data-lucide="mail"></i> Aktifkan Notifikasi Email</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end content-area -->
+  </div><!-- end main-wrap -->
+</div><!-- end app-shell -->
+
+<!-- ───────── PROFILE MODAL ───────── -->
+<div class="modal-backdrop" id="profile-modal" onclick="handleBackdropClick(event)">
+  <div class="modal" id="profile-modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title-label">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title-label">Detail Profil Aktif</span>
+      <button class="modal-close" onclick="closeProfileModal()" title="Tutup"><i data-lucide="x"></i></button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Hero profile card -->
+      <div class="modal-hero">
+        <div class="modal-av" id="modal-av" style="background:#EBF3FF;color:#0F62FE">BS</div>
+        <div class="modal-hero-info">
+          <div class="modal-hero-name" id="modal-name">Budi Santoso</div>
+          <div class="modal-hero-role" id="modal-role-desc">Junior Developer &middot; IT Development</div>
+          <div class="modal-hero-badges" id="modal-badges">
+            <span class="chip chip-blue">Anggota Baru</span>
+            <span class="chip chip-green">&#10003; Aktif</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info grid -->
+      <div class="modal-section">
+        <div class="modal-section-title">Informasi Orientasi</div>
+        <div class="modal-info-grid">
+          <div class="modal-info-item">
+            <div class="modal-info-label">Peran Aktif</div>
+            <div class="modal-info-val" id="modal-role-val">Anggota Baru</div>
+          </div>
+          <div class="modal-info-item">
+            <div class="modal-info-label">Divisi</div>
+            <div class="modal-info-val" id="modal-div-val">IT Development</div>
+          </div>
+          <div class="modal-info-item">
+            <div class="modal-info-label">Hari Bergabung</div>
+            <div class="modal-info-val" id="modal-day-val">Hari ke-18</div>
+          </div>
+          <div class="modal-info-item">
+            <div class="modal-info-label">Sisa Waktu</div>
+            <div class="modal-info-val" id="modal-remain-val">72 hari</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="modal-section">
+        <div class="modal-section-title">Progress Orientasi</div>
+        <div class="progress-label"><span id="modal-prog-label">Kesiapan Orientasi</span><span id="modal-prog-pct" style="color:var(--accent);font-weight:800">35%</span></div>
+        <div class="progress-track" style="margin-bottom:10px"><div class="progress-fill green" id="modal-prog-bar" style="width:35%"></div></div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;text-align:center;background:var(--accent-light);border-radius:8px;padding:8px">
+            <div style="font-size:18px;font-weight:800;color:var(--accent)" id="modal-done-count">7</div>
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600">Selesai</div>
+          </div>
+          <div style="flex:1;text-align:center;background:var(--warn-light);border-radius:8px;padding:8px">
+            <div style="font-size:18px;font-weight:800;color:var(--warn)" id="modal-remain-count">8</div>
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600">Tersisa</div>
+          </div>
+          <div style="flex:1;text-align:center;background:var(--primary-light);border-radius:8px;padding:8px">
+            <div style="font-size:18px;font-weight:800;color:var(--primary)">3</div>
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600">Sesi 1-on-1</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="modal-section" style="margin-bottom:0">
+        <div class="modal-section-title">Aksi Cepat</div>
+        <div class="modal-actions">
+          <button class="modal-action-btn" id="modal-switch-role-btn" onclick="modalSwitchRole()">
+            <i data-lucide="refresh-cw"></i>
+            <span id="modal-switch-label">Beralih ke Tampilan Buddy / Mentor</span>
+            <i data-lucide="chevron-right" class="btn-arrow"></i>
+          </button>
+          <button class="modal-action-btn" onclick="modalGoSettings()">
+            <i data-lucide="settings"></i>
+            <span>Buka Pengaturan Akun</span>
+            <i data-lucide="chevron-right" class="btn-arrow"></i>
+          </button>
+          <button class="modal-action-btn" onclick="modalGoMilestone()">
+            <i data-lucide="target"></i>
+            <span>Lihat Milestone Saya</span>
+            <i data-lucide="chevron-right" class="btn-arrow"></i>
+          </button>
+          <button class="modal-action-btn" onclick="modalGoLaporan()">
+            <i data-lucide="bar-chart-2"></i>
+            <span>Laporan Progress Lengkap</span>
+            <i data-lucide="chevron-right" class="btn-arrow"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ═══════════════════ DATA ═══════════════════
+const icebreakers = [
+  '"Apa proyek side-project paling seru yang pernah kamu kerjakan di luar jam kantor?"',
+  '"Kalau bisa belajar satu skill baru dalam semalam, apa yang akan kamu pilih dan kenapa?"',
+  '"Ceritakan satu momen di karir kamu yang paling bikin kamu bangga sampai sekarang!"',
+  '"Kalau tim kamu adalah sebuah band musik, kamu bakal jadi siapa dan memainkan alat apa?"',
+  '"Apa podcast atau buku yang paling mengubah cara pandang kamu soal pekerjaan?"',
+  '"Ritual pagi seperti apa yang bikin kamu paling produktif sebelum mulai kerja?"',
+  '"Kalau bisa meeting 1-on-1 dengan siapapun di dunia (visi/misi karir), kamu pilih siapa?"',
+  '"Hal apa dari pekerjaan sebelumnya yang paling kamu rindukan dan ingin kamu terapkan di sini?"',
+];
+
+const milestones30 = [
+  { id:'m1',  text:'Orientasi & Perkenalan Tim',                    tag:'Wajib',      done:true  },
+  { id:'m2',  text:'Setup Akun Email & VPN',                        tag:'IT',         done:true  },
+  { id:'m3',  text:'Baca Handbook Karyawan',                        tag:'HR',         done:true  },
+  { id:'m4',  text:'Meeting 1-on-1 pertama dengan Buddy',           tag:'Buddy',      done:true  },
+  { id:'m5',  text:'Ikuti sesi Product Deep-Dive',                  tag:'Produk',     done:true  },
+  { id:'m6',  text:'Kenali 10 anggota tim inti',                    tag:'Networking', done:true  },
+  { id:'m7',  text:'Submit Rencana 30-60-90 Hari',                  tag:'HR',         done:true  },
+  { id:'m8',  text:'Selesaikan pelatihan Compliance & Keamanan',    tag:'Wajib',      done:false },
+];
+const milestones60 = [
+  { id:'m9',  text:'Ambil ownership proyek pertama',                tag:'Proyek',     done:false },
+  { id:'m10', text:'Presentasi kontribusi ke tim',                  tag:'Soft Skill', done:false },
+  { id:'m11', text:'Review mid-point dengan manajer',               tag:'Evaluasi',   done:false },
+  { id:'m12', text:'Ikuti minimal 2 sesi knowledge-sharing',        tag:'Learning',   done:false },
+];
+const milestones90 = [
+  { id:'m13', text:'Selesaikan proyek pertama dengan deliverable',  tag:'Proyek',     done:false },
+  { id:'m14', text:'Self-assessment & performance review',          tag:'Evaluasi',   done:false },
+  { id:'m15', text:'Susun rencana pengembangan 6 bulan',            tag:'Karir',      done:false },
+];
+
+const faqData = [
+  { icon:'monitor',    color:'#EBF3FF', ic:'#0F62FE', title:'Setup Akun & VPN',               desc:'Panduan lengkap aktivasi akun, install VPN, dan akses sistem' },
+  { icon:'book-open',  color:'#ECFDF5', ic:'#10B981', title:'Tata Tertib & Budaya Kerja',      desc:'Nilai-nilai perusahaan, kode etik, dan norma profesional' },
+  { icon:'calendar',   color:'#FFFBEB', ic:'#F59E0B', title:'Alur Cuti & Klaim Reimbursement', desc:'Prosedur pengajuan cuti, lembur, dan klaim biaya kerja' },
+  { icon:'shield',     color:'#F5F3FF', ic:'#7C3AED', title:'Keamanan Data & IT Security',     desc:'Kebijakan pengamanan data, penggunaan perangkat, password' },
+  { icon:'users',      color:'#FFF1F2', ic:'#E11D48', title:'Struktur Organisasi & Direktori', desc:'Bagan org, daftar kontak, departemen, dan PIC utama' },
+  { icon:'credit-card',color:'#ECFDF5', ic:'#10B981', title:'Benefit & Kompensasi',            desc:'BPJS, asuransi, tunjangan, bonus, dan fasilitas karyawan' },
+  { icon:'git-branch', color:'#EBF3FF', ic:'#0F62FE', title:'Alur Kerja & Tools Kolaborasi',   desc:'Jira, Slack, Notion, Figma, Git — cara pakai dan best practice' },
+  { icon:'award',      color:'#FFFBEB', ic:'#F59E0B', title:'Program Pelatihan & Sertifikasi', desc:'Jadwal training, platform e-learning, dan dukungan sertifikasi' },
+  { icon:'map-pin',    color:'#F5F3FF', ic:'#7C3AED', title:'Fasilitas Kantor & Parkir',       desc:'Denah kantor, prosedur akses, ruang meeting, kantin' },
+  { icon:'phone',      color:'#FFF1F2', ic:'#E11D48', title:'Kontak Darurat & Helpdesk',       desc:'Nomor IT helpdesk, HR, security, dan prosedur insiden' },
+  { icon:'zap',        color:'#ECFDF5', ic:'#10B981', title:'Panduan Onboarding Cepat 7 Hari', desc:'Checklist dan agenda prioritas 7 hari pertama bergabung' },
+  { icon:'file-text',  color:'#EBF3FF', ic:'#0F62FE', title:'Template Dokumen & Formulir',     desc:'Template laporan, notulen rapat, proposal, surat menyurat' },
+];
+
+// ── AI CONTEXTUAL ENGINE ──────────────────────────────────────────────────────
+const aiRules = [
+  {
+    keywords: ['halo', 'hai', 'hi ', 'selamat pagi', 'selamat siang', 'selamat sore', 'apa kabar', 'hei', 'hey'],
+    responses: [
+      'Halo! Senang bisa menemanimu hari ini 😊 Ada yang ingin kamu tanyakan seputar proses orientasi? Saya siap membantu!',
+      'Hai! Semangat ya di hari ke-18 orientasimu 🙌 Apakah ada milestone yang perlu kita bahas, atau ada pertanyaan lain?',
+      'Selamat datang! Saya AI Onboarding Assistant-mu. Kamu bisa tanya soal tugas, jadwal sesi, buddy, tools, atau apa saja terkait orientasi 90 hari.',
+    ]
+  },
+  {
+    keywords: ['tugas hari ini', 'aktivitas hari ini', 'apa yang harus', 'agenda hari ini', 'harus dilakukan hari', 'kerjakan hari ini', 'jadwal hari ini', 'rencana hari'],
+    responses: [
+      'Berdasarkan milestone kamu hari ini (Hari ke-18), fokus utamamu adalah menyelesaikan pelatihan Compliance & Keamanan yang masih pending. Setelah itu, kamu bisa mulai menjajaki ownership proyek pertama untuk fase 31-60 hari. Semangat! 💪',
+      'Agenda hari ini untuk Budi: ✅ Cek progres milestone — 7 dari 15 sudah selesai. Prioritas berikutnya: selesaikan Pelatihan Compliance & Keamanan. Jangan lupa konfirmasi jadwal sesi 1-on-1 dengan Buddy Rina minggu ini!',
+    ]
+  },
+  {
+    keywords: ['milestone', '30 hari', '60 hari', '90 hari', 'target 30', 'target 60', 'target 90', 'fase orientasi', 'tahap orientasi', 'rencana 90'],
+    responses: [
+      'Program orientasimu dibagi 3 fase:\n📘 30 Hari Pertama (Aktif): Kenali tim, setup akun, baca handbook, 1-on-1 pertama. Kamu sudah selesaikan 7/8 item!\n📙 31-60 Hari (Mendatang): Ambil ownership proyek pertama, presentasi ke tim, review mid-point.\n📗 61-90 Hari (Terkunci): Deliverable proyek, self-assessment, rencana pengembangan 6 bulan.',
+      'Progress 30-60-90 hari kamu: fase pertama hampir tuntas (7/8 milestone). Satu yang masih pending: Pelatihan Compliance & Keamanan. Langkah berikutnya: segera selesaikan training tersebut dan diskusikan dengan Buddy Rina Wijaya tentang proyek pertama yang bisa kamu ambil alih.',
+    ]
+  },
+  {
+    keywords: ['buddy', 'mentor', 'rina', 'rina wijaya', 'pendamping', 'pembimbing', 'teman onboard'],
+    responses: [
+      'Buddy kamu adalah Rina Wijaya — Senior Software Engineer dengan 5 tahun pengalaman di Divisi IT. AI mencocokkan kalian dengan skor 94% berdasarkan kesamaan minat (Python, Cloud, Agile, Musik). Kontak langsung: ext. 2041 / Slack @rina.wijaya.',
+      'Rina Wijaya adalah mentor terbaikmu berdasarkan analisis AI (94% match)! Beliau ahli di Python, Cloud, dan Agile. Jadwalkan sesi 1-on-1 lewat menu Jadwal Sesi. Topik yang bisa dibahas: rencana proyek pertama, kultur tim, dan tips produktivitas.',
+      'Belum sempat ngobrol dengan Buddy-mu? Rina Wijaya siap dihubungi kapanpun. Coba mulai dengan pertanyaan ringan dulu — misalnya tools favorit atau proyek yang pernah dikerjakannya. Jadwalkan sesi lewat menu Jadwal Sesi di sidebar ya!',
+    ]
+  },
+  {
+    keywords: ['jadwal', 'sesi', '1-on-1', 'one on one', 'meeting', 'pertemuan', 'schedule', 'kapan bertemu', 'booking sesi'],
+    responses: [
+      'Kamu punya 3 sesi mendatang: (1) 1-on-1 dengan Rina Wijaya — Senin 09.00 WIB via Google Meet, (2) Review Milestone dengan Ahmad Fauzan — Rabu 13.00, (3) Check-in dengan HR — Jumat 10.00 tatap muka. Untuk menjadwalkan sesi baru, buka menu Jadwal Sesi di sidebar kiri!',
+      'Belum ada sesi 1-on-1 minggu ini? Yuk segera jadwalkan! Klik Jadwal Sesi di sidebar, pilih 1-on-1 dengan Buddy, pilih Rina Wijaya, dan tentukan waktu yang cocok. Disarankan minimal 1 sesi per minggu di 30 hari pertama orientasi.',
+    ]
+  },
+  {
+    keywords: ['vpn', 'akun', 'setup', 'tools', 'instalasi', 'install', 'email', 'login', 'akses sistem', 'password', 'git', 'slack', 'jira', 'notion'],
+    responses: [
+      'Tools kerja wajib: (1) Slack — download & login dengan email kantor, (2) Jira — akses via browser + minta akses dari IT, (3) Notion — minta invite dari Rina, (4) VPN — download GlobalProtect, server: vpn.perusahaan.co.id, (5) Google Workspace — gunakan akun budi.santoso@perusahaan.co.id. Ada yang stuck? Hubungi IT Helpdesk ext. 9000.',
+      'Panduan lengkap setup ada di menu Panduan & FAQ — cari Setup Akun & VPN. Untuk masalah teknis (login gagal, VPN error), langsung hubungi IT Helpdesk ext. 9000 atau Slack @it-helpdesk. Jam operasional: Senin-Jumat 08.00-17.00 WIB.',
+      'Jika VPN bermasalah: pastikan kamu menggunakan jaringan yang stabil, download client GlobalProtect dari portal IT, dan gunakan kredensial yang sama dengan email kantor. Jika masih gagal, buat tiket di portal.it-internal.co.id atau hubungi ext. 9000.',
+    ]
+  },
+  {
+    keywords: ['progress', 'progres', 'status orientasi', 'sejauh mana', 'berapa persen', 'sudah selesai berapa', 'perkembangan', 'capaian'],
+    responses: [
+      function() {
+        const all  = [...milestones30,...milestones60,...milestones90];
+        const done = all.filter(function(m) { return msState[m.id]; }).length;
+        const pct  = Math.round((done/all.length)*100);
+        return 'Progres orientasimu saat ini: ' + pct + '% (' + done + '/' + all.length + ' milestone selesai). Kamu berada di Hari ke-18 dari 90 hari. Fase 30 Hari Pertama hampir tuntas — tinggal 1 milestone lagi. Terus semangat, kamu on-track! 🏆';
+      },
+      function() {
+        const all  = [...milestones30,...milestones60,...milestones90];
+        const done = all.filter(function(m) { return msState[m.id]; }).length;
+        const pct  = Math.round((done/all.length)*100);
+        return 'Update progres terkini: ' + done + ' dari ' + all.length + ' tugas orientasi sudah kamu selesaikan (' + pct + '%). Milestone berikutnya: Pelatihan Compliance & Keamanan. Lihat detail di menu Milestone Saya!';
+      }
+    ]
+  },
+  {
+    keywords: ['cuti', 'izin', 'absen', 'sakit', 'libur', 'reimbursement', 'klaim', 'lembur'],
+    responses: [
+      'Alur pengajuan cuti: Buka portal HRIS (hris.perusahaan.co.id) > pilih Pengajuan Cuti > isi form minimal H-3 hari kerja > tunggu approval dari manajer langsung. Jatah cuti tahunan: 12 hari. Cuti sakit mendadak: hubungi manajer via Slack sebelum 08.30 dan upload surat dokter ke HRIS.',
+      'Untuk klaim reimbursement: submit via HRIS dalam 7 hari setelah pengeluaran, lampirkan nota/invoice asli, dan pastikan sudah ada pre-approval dari manajer untuk pengeluaran di atas Rp 500.000. Detail prosedur ada di panduan Alur Cuti & Klaim Reimbursement.',
+    ]
+  },
+  {
+    keywords: ['gaji', 'benefit', 'tunjangan', 'bpjs', 'asuransi', 'bonus', 'slip gaji', 'kompensasi', 'fasilitas'],
+    responses: [
+      'Benefit karyawan mencakup: BPJS Kesehatan & Ketenagakerjaan (ditanggung penuh), asuransi jiwa & rawat inap, tunjangan transportasi & makan, dan akses platform e-learning. Slip gaji cair tanggal 25 tiap bulan via portal HRIS.',
+      'Paket kompensasimu sudah diatur di kontrak kerja. Pastikan kamu sudah mengisi data rekening bank dan BPJS di HRIS sebelum akhir bulan pertama agar gaji dan benefit bisa diproses. Ada pertanyaan spesifik? Hubungi HR Desi Pramono ext. 1012.',
+    ]
+  },
+  {
+    keywords: ['budaya', 'nilai', 'culture', 'tata tertib', 'aturan', 'kebijakan', 'etika', 'kode etik', 'norma'],
+    responses: [
+      'Perusahaan kami menjunjung 5 nilai utama: Integritas, Kolaborasi, Inovasi, Customer-first, dan Keberlanjutan. Dress code: smart casual setiap hari, formal saat presentasi atau tamu eksternal. Jam kerja: 09.00-18.00 (fleksibel ±1 jam).',
+      'Budaya kerja kami: komunikasi terbuka, feedback langsung dan konstruktif, serta saling mendukung antar tim. Ada aturan no-meeting-Friday untuk fokus kerja individual. Baca lebih lanjut di panduan Tata Tertib & Budaya Kerja.',
+    ]
+  },
+  {
+    keywords: ['struktur', 'organisasi', 'direktori', 'kontak', 'siapa', 'manajer', 'atasan', 'helpdesk', 'tim it'],
+    responses: [
+      'Kontak penting: Buddy — Rina Wijaya (ext. 2041), HR — Desi Pramono (ext. 1012), IT Helpdesk (ext. 9000), Manajer — Ahmad Fauzan (ext. 3015). Direktori lengkap ada di menu Direktori Buddy di sidebar.',
+      'Tim IT Development kamu: Ahmad Fauzan (Product Manager), Rina Wijaya (Senior Engineer, Buddy kamu), Bagus Nugroho (DevOps), Rizky Pratama (Backend), Wahyu Santoso (QA), dan Budi Santoso (Junior Developer — itu kamu!). Lihat profil di Direktori Buddy!',
+    ]
+  },
+  {
+    keywords: ['pelatihan', 'training', 'sertifikasi', 'kursus', 'belajar', 'learning', 'e-learning', 'kelas', 'kembangkan'],
+    responses: [
+      'Program pelatihan yang tersedia: (1) Compliance & Keamanan (wajib — segera selesaikan!), (2) Onboarding IT Tools, (3) Agile & Scrum fundamentals, (4) Cloud basics. Akses platform e-learning di learn.perusahaan.co.id menggunakan akun kantor.',
+      'Ada budget sertifikasi sebesar Rp 5.000.000/tahun yang bisa kamu gunakan setelah masa probasi (3 bulan). Diskusikan rencana sertifikasi dengan Buddy Rina atau manajermu Ahmad Fauzan. Rekomendasi: AWS, Google Cloud, atau Scrum Master.',
+    ]
+  },
+  {
+    keywords: ['laporan', 'evaluasi', 'review', 'penilaian', 'performance', 'self assessment', 'probasi'],
+    responses: [
+      'Review pertamamu dijadwalkan di Hari ke-45 (review mid-point) bersama Ahmad Fauzan. Fokus evaluasi: adaptasi budaya, penyelesaian milestone, kualitas kontribusi awal, dan feedback dari Buddy. Siapkan self-assessment 1 minggu sebelumnya.',
+      'Tips persiapan review: dokumentasikan kontribusi dan learnings kamu secara rutin di Notion, minta feedback informal dari Rina (Buddy) sebelum review resmi, dan pastikan semua milestone fase pertama sudah selesai. Lihat template di panduan Template Dokumen & Formulir.',
+    ]
+  },
+  {
+    keywords: ['terima kasih', 'makasih', 'thanks', 'thank you', 'helpful', 'membantu', 'mantap', 'keren', 'bagus banget', 'oke banget'],
+    responses: [
+      'Sama-sama! Senang bisa membantu 😊 Jangan ragu untuk bertanya lagi kapanpun ya. Semangat untuk hari ke-18 orientasimu!',
+      'Dengan senang hati! Ingat, tidak ada pertanyaan yang terlalu sepele selama masa orientasi. Kamu bisa tanya saya kapan saja 🙌',
+      'Siap! Kalau ada lagi yang ingin ditanyakan soal milestone, jadwal, tools, atau apapun, saya selalu di sini. Semangat Budi! 💪',
+    ]
+  },
+  {
+    keywords: ['bye', 'selamat tinggal', 'sampai jumpa', 'dadah', 'pamit'],
+    responses: [
+      'Sampai jumpa! Semangat terus ya dalam perjalanan orientasimu. Jangan lupa cek milestone dan jadwal sesimu 👋',
+      'Sukses untuk harimu! Ingat, Buddy Rina siap dihubungi jika butuh bantuan. Sampai ketemu lagi! 😊',
+    ]
+  },
+];
+
+function getAIReply(question) {
+  var q = question.toLowerCase().trim();
+  for (var i = 0; i < aiRules.length; i++) {
+    var rule = aiRules[i];
+    var matched = rule.keywords.some(function(kw) { return q.indexOf(kw) !== -1; });
+    if (matched) {
+      var pool = rule.responses;
+      var pick = pool[Math.floor(Math.random() * pool.length)];
+      return (typeof pick === 'function') ? pick() : pick;
+    }
+  }
+  var fallbacks = [
+    'Pertanyaan yang menarik! Untuk informasi lebih detail, coba cek menu Panduan & FAQ atau hubungi HR Onboarding — Desi Pramono (ext. 1012). Apakah ada topik lain yang bisa saya bantu? 🤔',
+    'Hmm, saya belum punya informasi spesifik untuk itu. Kamu bisa cek panduan lengkap di menu FAQ, atau tanyakan langsung ke Buddy Rina Wijaya (ext. 2041) untuk jawaban yang lebih personal 💡',
+    'Saya masih belajar menjawab pertanyaan tersebut! Tapi kamu bisa menemukan jawabannya di Handbook Karyawan atau panduan FAQ. Mau saya bantu navigasikan ke halaman yang tepat? 📖',
+    'Bagus kamu aktif bertanya! Untuk topik itu, Buddy Rina Wijaya atau tim HR adalah sumber terbaik. Kamu juga bisa cek panduan di menu Panduan & FAQ. 🌟',
+  ];
+  return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+}
+
+const popularQuestions = [
+  'Apa yang harus saya kerjakan hari ini?',
+  'Bagaimana progress milestone saya?',
+  'Siapa buddy/mentor saya?',
+  'Apa tools kerja yang wajib disetup?',
+  'Kapan jadwal sesi 1-on-1 berikutnya?',
+  'Bagaimana cara mengajukan cuti?',
+];
+
+const activityData = [
+  { icon:'check-circle',  color:'#10B981', text:'Milestone "Ikuti Product Deep-Dive" selesai',   time:'2 jam lalu'   },
+  { icon:'message-circle',color:'#0F62FE', text:'Chat AI: Tanya tentang prosedur cuti',          time:'5 jam lalu'   },
+  { icon:'users',         color:'#7C3AED', text:'Buddy Rina Wijaya menjadwalkan sesi Senin',     time:'Kemarin'      },
+  { icon:'book-open',     color:'#F59E0B', text:'Panduan "Setup Akun & VPN" dibaca',             time:'Kemarin'      },
+  { icon:'award',         color:'#10B981', text:'Bergabung resmi di tim IT Development',         time:'18 hari lalu' },
+];
+
+const menteeData = [
+  { name:'Budi Santoso',   role:'IT Development',       av:'BS', avBg:'#EBF3FF', avColor:'#0F62FE', progress:35, day:18, mood:'😊' },
+  { name:'Alya Rahmawati', role:'Digital Marketing',    av:'AR', avBg:'#FFF1F2', avColor:'#E11D48', progress:62, day:34, mood:'🤩' },
+  { name:'Hendra Kusuma',  role:'Finance & Accounting', av:'HK', avBg:'#ECFDF5', avColor:'#10B981', progress:88, day:76, mood:'😊' },
+];
+
+const directoryData = [
+  { name:'Rina Wijaya',      role:'Senior Software Engineer', div:'IT Development',    exp:'5 tahun', av:'RW', avBg:'#F0FDF4', avColor:'#065F46', skills:['Python','Cloud','Agile'], match:94  },
+  { name:'Ahmad Fauzan',     role:'Product Manager',          div:'Product',           exp:'7 tahun', av:'AF', avBg:'#EBF3FF', avColor:'#0F62FE', skills:['Product','Scrum','Data'], match:87  },
+  { name:'Desi Pramono',     role:'HR Business Partner',      div:'Human Resources',   exp:'4 tahun', av:'DP', avBg:'#FFF1F2', avColor:'#E11D48', skills:['HR','Training','OD'],     match:72  },
+  { name:'Bagus Nugroho',    role:'DevOps Engineer',          div:'IT Infrastructure', exp:'6 tahun', av:'BN', avBg:'#FFFBEB', avColor:'#92400E', skills:['Docker','CI/CD','AWS'],   match:91  },
+  { name:'Sinta Kartika',    role:'UX Designer',              div:'Design',            exp:'3 tahun', av:'SK', avBg:'#F5F3FF', avColor:'#7C3AED', skills:['Figma','User Research'],  match:68  },
+  { name:'Farhan Hidayat',   role:'Data Analyst',             div:'Business Intel.',   exp:'4 tahun', av:'FH', avBg:'#ECFDF5', avColor:'#065F46', skills:['SQL','Tableau','Python'],  match:83  },
+  { name:'Layla Azzahra',    role:'Finance Specialist',       div:'Finance',           exp:'5 tahun', av:'LA', avBg:'#FFF1F2', avColor:'#E11D48', skills:['Excel','SAP','PSAK'],      match:60  },
+  { name:'Rizky Pratama',    role:'Backend Developer',        div:'IT Development',    exp:'4 tahun', av:'RP', avBg:'#EBF3FF', avColor:'#0F62FE', skills:['Node.js','Go','Redis'],    match:88  },
+  { name:'Ninda Sari',       role:'Marketing Specialist',     div:'Marketing',         exp:'3 tahun', av:'NS', avBg:'#FFFBEB', avColor:'#92400E', skills:['SEO','Content','Canva'],   match:55  },
+  { name:'Wahyu Santoso',    role:'QA Engineer',              div:'IT Development',    exp:'5 tahun', av:'WS', avBg:'#F5F3FF', avColor:'#7C3AED', skills:['Selenium','Jest','QA'],    match:79  },
+  { name:'Putri Anggraini',  role:'Legal Counsel',            div:'Legal',             exp:'6 tahun', av:'PA', avBg:'#FFF1F2', avColor:'#E11D48', skills:['Hukum','Kontrak','RUPS'],  match:48  },
+  { name:'Eko Prasetyo',     role:'IT Security Analyst',      div:'IT Security',       exp:'7 tahun', av:'EP', avBg:'#ECFDF5', avColor:'#065F46', skills:['Pentest','SIEM','ISO27001'], match:76 },
+];
+
+const scheduledSessions = [
+  { date:'Senin, 25 Nov 2024',  time:'09.00–10.00', type:'1-on-1 dengan Buddy', with:'Rina Wijaya', platform:'Google Meet', color:'#0F62FE' },
+  { date:'Rabu, 27 Nov 2024',   time:'13.00–14.00', type:'Review Milestone',    with:'Ahmad Fauzan', platform:'Zoom',       color:'#F59E0B' },
+  { date:'Jumat, 29 Nov 2024',  time:'10.00–11.00', type:'Check-in Mingguan',   with:'Desi Pramono (HR)', platform:'Tatap Muka', color:'#10B981' },
+];
+
+const sessionHistory = [
+  { date:'18 Nov 2024', type:'1-on-1 dengan Buddy', with:'Rina Wijaya',   platform:'Google Meet',    status:'Selesai', note:'Bahas rencana 30 hari' },
+  { date:'12 Nov 2024', type:'Orientasi Perusahaan', with:'HR Team',       platform:'Tatap Muka',      status:'Selesai', note:'Perkenalan & handbook' },
+  { date:'8 Nov 2024',  type:'Check-in Mingguan',   with:'Desi Pramono',  platform:'Zoom',            status:'Selesai', note:'Setup akun IT selesai' },
+];
+
+const notifSettings = [
+  { label:'Reminder sesi 1-on-1 (1 jam sebelum)',  key:'n1', active:true  },
+  { label:'Update milestone dari buddy',           key:'n2', active:true  },
+  { label:'Notifikasi tugas baru dari HR',         key:'n3', active:true  },
+  { label:'Digest harian progress orientasi',      key:'n4', active:false },
+  { label:'Pesan dari AI Onboarding Assistant',    key:'n5', active:true  },
+  { label:'Pengumuman perusahaan',                 key:'n6', active:false },
+];
+
+// ═══════════════════ STATE ═══════════════════
+let currentRole = 'newhire';
+let currentPage = 'dashboard';
+let msState = {};
+[...milestones30,...milestones60,...milestones90].forEach(m => msState[m.id] = m.done);
+let icebreakerIdx = 0;
+
+// ═══════════════════ NAV ═══════════════════
+function navTo(pageId, el) {
+  // Hide all pages
+  document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+  // Show target page
+  const target = document.getElementById('page-' + pageId);
+  if (target) target.classList.add('active');
+  // Update nav items
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  currentPage = pageId;
+  // Page-specific init
+  if (pageId === 'laporan')    renderReport();
+  if (pageId === 'jadwal')     renderJadwal();
+  if (pageId === 'pengaturan') renderPengaturan();
+  if (pageId === 'direktori')  renderDirGrid(directoryData);
+  if (pageId === 'faq')        renderFaqFull();
+  if (pageId === 'chat')       { renderPopularQs(); }
+  lucide.createIcons();
+}
+
+// ═══════════════════ ROLE SWITCHER ═══════════════════
+function switchRole(role) {
+  currentRole = role;
+  document.getElementById('btn-newhire').classList.toggle('active', role === 'newhire');
+  document.getElementById('btn-buddy').classList.toggle('active',   role === 'buddy');
+
+  if (role === 'newhire') {
+    document.getElementById('sidebar-name').textContent   = 'Budi Santoso';
+    document.getElementById('sidebar-role').textContent   = 'Anggota Baru \u00B7 IT Dept.';
+    document.getElementById('sidebar-avatar').textContent = 'BS';
+    document.getElementById('sidebar-avatar').style.background = '#EBF3FF';
+    document.getElementById('sidebar-avatar').style.color      = '#0F62FE';
+    document.getElementById('buddy-subtitle').textContent = 'Pasangan mentor terbaik untuk Anda';
+    document.getElementById('buddy-name').textContent     = 'Rina Wijaya';
+    document.getElementById('buddy-role').textContent     = 'Senior Software Engineer \u00B7 5 Thn';
+    document.getElementById('buddy-av').textContent       = 'RW';
+    document.getElementById('buddy-av').style.background  = '#F0FDF4';
+    document.getElementById('buddy-av').style.color       = '#065F46';
+    document.getElementById('buddy-div').textContent      = 'Divisi IT';
+    document.getElementById('interest-tags').innerHTML    = '<span class="chip chip-blue">🐍 Python</span><span class="chip chip-green">☁️ Cloud</span><span class="chip chip-blue">🎸 Musik</span><span class="chip chip-green">🏃 Lari Pagi</span><span class="chip chip-blue">🎯 Agile</span>';
+    document.getElementById('mentor-panel').style.display = 'none';
+    document.getElementById('activity-card').style.gridColumn = 'span 4';
+    // Settings page
+    document.getElementById('set-avatar').textContent = 'BS';
+    document.getElementById('set-avatar').style.background = '#EBF3FF';
+    document.getElementById('set-avatar').style.color = '#0F62FE';
+    document.getElementById('set-name').textContent = 'Budi Santoso';
+    document.getElementById('set-role').textContent = 'Junior Developer \u00B7 IT Development';
+    showToast('Tampilan beralih ke Anggota Baru \u2014 Budi Santoso 👤', 'info');
+  } else {
+    document.getElementById('sidebar-name').textContent   = 'Rina Wijaya';
+    document.getElementById('sidebar-role').textContent   = 'Senior Engineer \u00B7 Mentor';
+    document.getElementById('sidebar-avatar').textContent = 'RW';
+    document.getElementById('sidebar-avatar').style.background = '#F0FDF4';
+    document.getElementById('sidebar-avatar').style.color      = '#065F46';
+    document.getElementById('buddy-subtitle').textContent = 'Profil mentee yang Anda dampingi';
+    document.getElementById('buddy-name').textContent     = 'Budi Santoso';
+    document.getElementById('buddy-role').textContent     = 'Junior Developer \u00B7 New Hire';
+    document.getElementById('buddy-av').textContent       = 'BS';
+    document.getElementById('buddy-av').style.background  = '#EBF3FF';
+    document.getElementById('buddy-av').style.color       = '#0F62FE';
+    document.getElementById('buddy-div').textContent      = 'Divisi IT';
+    document.getElementById('interest-tags').innerHTML    = '<span class="chip chip-blue">🐍 Python</span><span class="chip chip-green">🎓 Baru Lulus</span><span class="chip chip-blue">🎮 Gaming</span><span class="chip chip-warn">📚 Belajar Cloud</span><span class="chip chip-blue">🎯 Semangat</span>';
+    document.getElementById('mentor-panel').style.display = 'block';
+    document.getElementById('activity-card').style.gridColumn = 'span 12';
+    // Settings page
+    document.getElementById('set-avatar').textContent = 'RW';
+    document.getElementById('set-avatar').style.background = '#F0FDF4';
+    document.getElementById('set-avatar').style.color = '#065F46';
+    document.getElementById('set-name').textContent = 'Rina Wijaya';
+    document.getElementById('set-role').textContent = 'Senior Software Engineer \u00B7 IT Development';
+    showToast('Tampilan beralih ke Buddy/Mentor \u2014 Rina Wijaya 🎍', 'info');
+  }
+  lucide.createIcons();
+}
+
+// ═══════════════════ MILESTONES ═══════════════════
+function renderMilestones() {
+  renderMsGroup('milestones',   milestones30);
+  renderMsGroup('milestones-60',milestones60);
+  renderMsGroup('milestones-90',milestones90);
+  renderMsGroup('ms-p-30',      milestones30, true);
+  renderMsGroup('ms-p-60',      milestones60, true);
+  renderMsGroup('ms-p-90',      milestones90, true);
+}
+
+function renderMsGroup(containerId, data, isPage) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  data.forEach(m => {
+    const done = msState[m.id];
+    const div  = document.createElement('div');
+    div.className = 'milestone-item' + (done ? ' done' : '');
+    div.id = (isPage ? 'msp-' : 'ms-') + m.id;
+    div.innerHTML = `<div class="ms-check"><i data-lucide="check"></i></div><span class="ms-text">${m.text}</span><span class="chip ${done?'chip-green':'chip-gray'} ms-tag">${m.tag}</span>`;
+    div.onclick = () => toggleMilestone(m.id);
+    container.appendChild(div);
+  });
+}
+
+function toggleMilestone(id) {
+  msState[id] = !msState[id];
+  // Update both dashboard & milestone page checkboxes
+  ['ms-'+id, 'msp-'+id].forEach(eid => {
+    const el = document.getElementById(eid);
+    if (!el) return;
+    el.classList.toggle('done', msState[id]);
+    el.querySelector('.ms-tag').className = 'chip ' + (msState[id] ? 'chip-green' : 'chip-gray') + ' ms-tag';
+  });
+  updateProgress();
+  const ms = [...milestones30,...milestones60,...milestones90].find(m => m.id === id);
+  if (msState[id]) showToast(`✅ "${ms.text}" ditandai selesai!`, 'success');
+  lucide.createIcons();
+}
+
+function updateProgress() {
+  const all   = [...milestones30,...milestones60,...milestones90];
+  const done  = all.filter(m => msState[m.id]).length;
+  const total = all.length;
+  const pct   = Math.round((done / total) * 100);
+  // Dashboard
+  ['main-progress-bar'].forEach(id => { const el = document.getElementById(id); if(el) el.style.width = pct+'%'; });
+  ['pct-label','stat-progress'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = pct+'%'; });
+  ['stat-tasks'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = done; });
+  ['stat-task-label'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = `Tugas Selesai / ${total}`; });
+  // Milestone page
+  const mpDone = document.getElementById('ms-page-done'); if(mpDone) mpDone.textContent = done;
+  const mpRem  = document.getElementById('ms-page-remaining'); if(mpRem) mpRem.textContent = total - done;
+  const mpPct  = document.getElementById('ms-page-pct'); if(mpPct) mpPct.textContent = pct+'%';
+  const mpBar  = document.getElementById('ms-page-bar'); if(mpBar) mpBar.style.width = pct+'%';
+  const mpBarL = document.getElementById('ms-page-bar-label'); if(mpBarL) mpBarL.textContent = pct+'%';
+  // Report page
+  const rptPct = document.getElementById('rpt-pct'); if(rptPct) rptPct.textContent = pct+'%';
+  const rptDone= document.getElementById('rpt-done'); if(rptDone) rptDone.textContent = done;
+}
+
+// ═══════════════════ ICEBREAKER ═══════════════════
+function newIcebreaker() {
+  icebreakerIdx = (icebreakerIdx + 1) % icebreakers.length;
+  const box = document.getElementById('icebreaker-box');
+  box.style.opacity = '0'; box.style.transform = 'translateY(4px)';
+  setTimeout(() => {
+    box.textContent = icebreakers[icebreakerIdx];
+    box.style.opacity = '1'; box.style.transform = 'translateY(0)';
+  }, 200);
+}
+function scheduleSession() {
+  showToast('📅 Sesi 1-on-1 dengan Rina Wijaya berhasil dijadwalkan Senin, 09.00 WIB!', 'success');
+}
+
+// ═══════════════════ AI CHAT ═══════════════════
+function askAI(question, boxId) {
+  const bid  = boxId || 'chat-box';
+  const box  = document.getElementById(bid);
+  if (!box) return;
+  const userInitial = currentRole === 'newhire' ? 'BS' : 'RW';
+  const userBg      = currentRole === 'newhire' ? '#0F62FE' : '#065F46';
+
+  const userDiv = document.createElement('div');
+  userDiv.className = 'chat-msg user';
+  userDiv.innerHTML = `<div class="chat-avatar" style="background:${userBg};color:#fff">${userInitial}</div><div class="chat-bubble user">${question}</div>`;
+  box.appendChild(userDiv);
+
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'chat-msg'; typingDiv.id = 'typing-' + bid;
+  typingDiv.innerHTML = `<div class="chat-avatar" style="background:#EBF3FF;color:#0F62FE">AI</div><div class="chat-bubble ai" style="color:var(--text-muted)">⌛ AI sedang memproses...</div>`;
+  box.appendChild(typingDiv);
+  box.scrollTop = box.scrollHeight;
+
+  setTimeout(() => {
+    document.getElementById('typing-' + bid)?.remove();
+    const aiDiv = document.createElement('div');
+    aiDiv.className = 'chat-msg';
+    const reply = getAIReply(question);
+    aiDiv.innerHTML = `<div class="chat-avatar" style="background:#EBF3FF;color:#0F62FE">AI</div><div class="chat-bubble ai">${reply}</div>`;
+    box.appendChild(aiDiv);
+    box.scrollTop = box.scrollHeight;
+  }, 1200);
+}
+
+function sendChatFull() {
+  const input = document.getElementById('chat-input-full');
+  const q = input.value.trim();
+  if (!q) return;
+  askAI(q, 'chat-box-full');
+  input.value = '';
+}
+
+function setMood(el, label) {
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  showToast(`Mood check-in "${label}" berhasil dicatat 💙`, 'success');
+}
+
+// ═══════════════════ FAQ DASHBOARD ═══════════════════
+function renderFaq() {
+  const container = document.getElementById('faq-list');
+  if (!container) return;
+  container.innerHTML = '';
+  faqData.slice(0, 7).forEach(f => appendFaqItem(container, f));
+}
+
+function filterFaq() {
+  const q = document.getElementById('faq-input').value.toLowerCase().trim();
+  const items = document.querySelectorAll('#faq-list .faq-item');
+  let visible = 0;
+  items.forEach(item => {
+    const matches = !q || item.dataset.search.includes(q);
+    item.classList.toggle('hidden', !matches);
+    if (matches) visible++;
+  });
+  document.getElementById('faq-count').textContent = visible + ' panduan';
+  lucide.createIcons();
+}
+
+// ═══════════════════ FAQ FULL PAGE ═══════════════════
+function renderFaqFull() {
+  const grid = document.getElementById('faq-full-grid');
+  if (!grid || grid.dataset.rendered) return;
+  grid.dataset.rendered = '1';
+  grid.innerHTML = '';
+  faqData.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'faq-item';
+    div.dataset.search = (f.title + ' ' + f.desc).toLowerCase();
+    div.style.padding = '14px 16px';
+    div.innerHTML = `
+      <div class="faq-icon-wrap" style="background:${f.color};width:40px;height:40px;border-radius:10px">
+        <i data-lucide="${f.icon}" style="color:${f.ic};width:18px;height:18px"></i>
+      </div>
+      <div>
+        <div class="faq-title">${f.title}</div>
+        <div class="faq-desc">${f.desc}</div>
+      </div>
+      <i data-lucide="chevron-right" style="width:14px;height:14px;color:var(--text-light);margin-left:auto;flex-shrink:0"></i>`;
+    div.onclick = () => showToast(`📖 Membuka panduan: ${f.title}`, 'info');
+    grid.appendChild(div);
+  });
+}
+
+function filterFaqFull() {
+  const q = document.getElementById('faq-full-input').value.toLowerCase().trim();
+  const items = document.querySelectorAll('#faq-full-grid .faq-item');
+  items.forEach(item => item.classList.toggle('hidden', q && !item.dataset.search.includes(q)));
+  lucide.createIcons();
+}
+
+function appendFaqItem(container, f) {
+  const div = document.createElement('div');
+  div.className = 'faq-item';
+  div.dataset.search = (f.title + ' ' + f.desc).toLowerCase();
+  div.innerHTML = `
+    <div class="faq-icon-wrap" style="background:${f.color}"><i data-lucide="${f.icon}" style="color:${f.ic}"></i></div>
+    <div><div class="faq-title">${f.title}</div><div class="faq-desc">${f.desc}</div></div>
+    <i data-lucide="chevron-right" style="width:14px;height:14px;color:var(--text-light);margin-left:auto;flex-shrink:0"></i>`;
+  div.onclick = () => showToast(`📖 Membuka panduan: ${f.title}`, 'info');
+  container.appendChild(div);
+}
+
+// ═══════════════════ ACTIVITY ═══════════════════
+function renderActivity() {
+  const container = document.getElementById('activity-list');
+  if (!container) return;
+  container.innerHTML = '';
+  activityData.forEach(a => {
+    const div = document.createElement('div');
+    div.className = 'timeline-item';
+    div.innerHTML = `<div class="tl-dot" style="border-color:${a.color}"><i data-lucide="${a.icon}" style="color:${a.color}"></i></div><div class="tl-content"><div class="tl-title">${a.text}</div><div class="tl-meta">${a.time}</div></div>`;
+    container.appendChild(div);
+  });
+}
+
+// ═══════════════════ MENTEE CARDS ═══════════════════
+function renderMenteeCards() {
+  const container = document.getElementById('mentee-cards');
+  if (!container) return;
+  container.innerHTML = '';
+  menteeData.forEach(m => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px';
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div class="avatar" style="background:${m.avBg};color:${m.avColor}">${m.av}</div>
+        <div><div style="font-size:13px;font-weight:700">${m.name}</div><div style="font-size:11.5px;color:var(--text-muted)">${m.role}</div></div>
+        <span style="margin-left:auto;font-size:18px">${m.mood}</span>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Progress</span><span style="color:var(--accent)">${m.progress}%</span></div>
+        <div class="progress-track"><div class="progress-fill green" style="width:${m.progress}%"></div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+        <span class="chip chip-gray">Hari ke-${m.day}</span>
+        <button class="btn btn-outline btn-sm" onclick="showToast('Membuka detail progress ${m.name}','info')"><i data-lucide="eye"></i> Detail</button>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+// ═══════════════════ DIREKTORI ═══════════════════
+function renderDirGrid(data) {
+  const grid = document.getElementById('dir-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  data.forEach(d => {
+    const matchColor = d.match >= 90 ? '#10B981' : d.match >= 75 ? '#0F62FE' : '#F59E0B';
+    const matchClass = d.match >= 90 ? 'chip-green' : d.match >= 75 ? 'chip-blue' : 'chip-warn';
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.style.cursor = 'pointer';
+    div.innerHTML = `
+      <div style="display:flex;gap:12px;margin-bottom:12px">
+        <div class="buddy-avatar" style="background:${d.avBg};color:${d.avColor};width:48px;height:48px;font-size:16px">${d.av}</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700">${d.name}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${d.role}</div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">🏢 ${d.div} &middot; ${d.exp}</div>
+        </div>
+        <span class="chip ${matchClass}" style="height:fit-content;white-space:nowrap">${d.match}% match</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
+        ${d.skills.map(s=>`<span class="chip chip-gray">${s}</span>`).join('')}
+      </div>
+      <div style="display:flex;gap:7px">
+        <button class="btn btn-primary btn-sm" style="flex:1;justify-content:center" onclick="event.stopPropagation();showToast('Undangan sesi dikirim ke ${d.name}','success')"><i data-lucide="calendar-plus"></i> Jadwalkan</button>
+        <button class="btn btn-ghost btn-sm"   onclick="event.stopPropagation();showToast('Membuka profil ${d.name}','info')"><i data-lucide="user"></i></button>
+      </div>`;
+    grid.appendChild(div);
+  });
+}
+
+function filterDir() {
+  const q = document.getElementById('dir-search').value.toLowerCase().trim();
+  const filtered = !q ? directoryData : directoryData.filter(d =>
+    (d.name + d.role + d.div + d.skills.join(' ')).toLowerCase().includes(q)
+  );
+  renderDirGrid(filtered);
+  lucide.createIcons();
+}
+
+// ═══════════════════ JADWAL ═══════════════════
+function renderJadwal() {
+  const list = document.getElementById('schedule-list');
+  if (!list || list.dataset.rendered) return;
+  list.dataset.rendered = '1';
+  list.innerHTML = '';
+  scheduledSessions.forEach(s => {
+    const div = document.createElement('div');
+    div.style.cssText = `display:flex;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:8px;background:var(--bg);`;
+    div.innerHTML = `
+      <div style="width:4px;border-radius:999px;background:${s.color};flex-shrink:0;align-self:stretch"></div>
+      <div>
+        <div style="font-size:13px;font-weight:700">${s.type}</div>
+        <div style="font-size:11.5px;color:var(--text-muted)">👤 ${s.with}</div>
+        <div style="font-size:11.5px;color:var(--text-muted)">📅 ${s.date} &middot; ${s.time}</div>
+        <div style="font-size:11.5px;color:var(--text-muted)">📺 ${s.platform}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto;height:fit-content;align-self:center" onclick="showToast('Bergabung ke sesi ${s.type}...','info')"><i data-lucide="video"></i></button>`;
+    list.appendChild(div);
+  });
+
+  const tbody = document.getElementById('session-history');
+  if (!tbody || tbody.dataset.rendered) return;
+  tbody.dataset.rendered = '1';
+  sessionHistory.forEach(h => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${h.date}</td><td>${h.type}</td><td>${h.with}</td><td>${h.platform}</td><td><span class="chip chip-green">${h.status}</span></td><td style="color:var(--text-muted)">${h.note}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ═══════════════════ LAPORAN ═══════════════════
+function renderReport() {
+  const all   = [...milestones30,...milestones60,...milestones90];
+  const done  = all.filter(m => msState[m.id]).length;
+  const total = all.length;
+  const pct   = Math.round((done/total)*100);
+  const rptPct = document.getElementById('rpt-pct'); if(rptPct) rptPct.textContent = pct+'%';
+  const rptDone= document.getElementById('rpt-done'); if(rptDone) rptDone.textContent = done;
+
+  // Phase progress
+  const phases = [
+    { label:'30 Hari Pertama', data:milestones30, color:'blue'   },
+    { label:'31-60 Hari',      data:milestones60, color:'warn'   },
+    { label:'61-90 Hari',      data:milestones90, color:'purple' },
+  ];
+  const plist = document.getElementById('phase-progress-list');
+  if (plist) {
+    plist.innerHTML = '';
+    phases.forEach(ph => {
+      const d2 = ph.data.filter(m=>msState[m.id]).length;
+      const p2 = Math.round((d2/ph.data.length)*100);
+      plist.innerHTML += `<div class="progress-wrap"><div class="progress-label"><span>${ph.label}</span><span>${d2}/${ph.data.length} (${p2}%)</span></div><div class="progress-track"><div class="progress-fill ${ph.color}" style="width:${p2}%"></div></div></div>`;
+    });
+  }
+
+  // Weekly activity chart (simple bar)
+  const weeks = [
+    { w:'Mgg 1', tasks:3, sessions:1 },
+    { w:'Mgg 2', tasks:2, sessions:2 },
+    { w:'Mgg 3', tasks:1, sessions:1 },
+    { w:'Mgg 4', tasks:1, sessions:1 },
+  ];
+  const wactivity = document.getElementById('weekly-activity');
+  if (wactivity) {
+    wactivity.innerHTML = '';
+    weeks.forEach(w => {
+      wactivity.innerHTML += `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="width:50px;font-size:12px;font-weight:600;color:var(--text-muted)">${w.w}</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+              <div style="width:${w.tasks*40}px;height:8px;background:var(--primary);border-radius:999px"></div>
+              <span style="font-size:11px;color:var(--text-muted)">${w.tasks} tugas</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="width:${w.sessions*40}px;height:8px;background:var(--accent);border-radius:999px"></div>
+              <span style="font-size:11px;color:var(--text-muted)">${w.sessions} sesi</span>
+            </div>
+          </div>
+        </div>`;
+    });
+  }
+
+  // Report table
+  const tbody = document.getElementById('report-table');
+  if (tbody) {
+    tbody.innerHTML = '';
+    const phaseName = { m1:'30 Hari', m2:'30 Hari', m3:'30 Hari', m4:'30 Hari', m5:'30 Hari', m6:'30 Hari', m7:'30 Hari', m8:'30 Hari', m9:'60 Hari', m10:'60 Hari', m11:'60 Hari', m12:'60 Hari', m13:'90 Hari', m14:'90 Hari', m15:'90 Hari' };
+    all.forEach(m => {
+      const done = msState[m.id];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${m.text}</td><td>${phaseName[m.id]||'-'}</td><td><span class="chip chip-gray">${m.tag}</span></td><td>${done ? '<span class="chip chip-green">✅ Selesai</span>' : '<span class="chip chip-warn">⏱ Pending</span>'}</td><td style="color:var(--text-muted)">${done ? '18 Nov 2024' : '-'}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+// ═══════════════════ PENGATURAN ═══════════════════
+function renderPengaturan() {
+  const container = document.getElementById('notif-settings');
+  if (!container || container.dataset.rendered) return;
+  container.dataset.rendered = '1';
+  notifSettings.forEach(n => {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)';
+    div.innerHTML = `
+      <span style="font-size:13px;font-weight:500">${n.label}</span>
+      <div style="position:relative;width:40px;height:22px;cursor:pointer" onclick="toggleNotif(this,'${n.key}')">
+        <div style="position:absolute;inset:0;border-radius:999px;background:${n.active ? 'var(--accent)' : 'var(--border)'};transition:.2s" id="toggle-track-${n.key}"></div>
+        <div style="position:absolute;top:3px;left:${n.active ? '20' : '3'}px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:.2s" id="toggle-thumb-${n.key}"></div>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function toggleNotif(el, key) {
+  const track = document.getElementById('toggle-track-' + key);
+  const thumb = document.getElementById('toggle-thumb-' + key);
+  const isOn  = track.style.background.includes('#10B981') || track.style.background.includes('var(--accent)');
+  track.style.background = isOn ? 'var(--border)' : 'var(--accent)';
+  thumb.style.left = isOn ? '3px' : '20px';
+  showToast(isOn ? 'Notifikasi dinonaktifkan.' : 'Notifikasi diaktifkan.', 'info');
+}
+
+// ═══════════════════ POPULAR QS ═══════════════════
+function renderPopularQs() {
+  const container = document.getElementById('popular-qs');
+  if (!container) return;
+  // Always re-render so popular questions stay fresh
+  container.innerHTML = '';
+  popularQuestions.forEach(q => {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-ghost btn-sm btn-block';
+    btn.style.justifyContent = 'flex-start';
+    btn.style.textAlign = 'left';
+    btn.textContent = q;
+    btn.onclick = function() { askAI(q, 'chat-box-full'); };
+    container.appendChild(btn);
+  });
+}
+
+// ═══════════════════ PROFILE MODAL ═══════════════════
+function openProfileModal() {
+  const all   = [...milestones30,...milestones60,...milestones90];
+  const done  = all.filter(m => msState[m.id]).length;
+  const total = all.length;
+  const pct   = Math.round((done / total) * 100);
+
+  const isNewhire = currentRole === 'newhire';
+
+  // Hero
+  const av     = isNewhire ? 'BS' : 'RW';
+  const avBg   = isNewhire ? '#EBF3FF' : '#F0FDF4';
+  const avCol  = isNewhire ? '#0F62FE' : '#065F46';
+  const name   = isNewhire ? 'Budi Santoso' : 'Rina Wijaya';
+  const rdesc  = isNewhire ? 'Junior Developer &middot; IT Development' : 'Senior Software Engineer &middot; IT Development';
+  const roleVal= isNewhire ? 'Anggota Baru' : 'Buddy / Mentor';
+  const divVal = isNewhire ? 'IT Development' : 'IT Development';
+  const dayVal = isNewhire ? 'Hari ke-18' : 'Mentor Aktif';
+  const remVal = isNewhire ? '72 hari' : '3 Mentee';
+  const switchLabel = isNewhire ? 'Beralih ke Tampilan Buddy / Mentor' : 'Beralih ke Tampilan Anggota Baru';
+
+  // Apply to DOM
+  const mo = id => document.getElementById(id);
+  mo('modal-av').textContent         = av;
+  mo('modal-av').style.background    = avBg;
+  mo('modal-av').style.color         = avCol;
+  mo('modal-name').textContent       = name;
+  mo('modal-role-desc').innerHTML    = rdesc;
+  mo('modal-role-val').textContent   = roleVal;
+  mo('modal-div-val').textContent    = divVal;
+  mo('modal-day-val').textContent    = dayVal;
+  mo('modal-remain-val').textContent = remVal;
+  mo('modal-switch-label').textContent = switchLabel;
+
+  mo('modal-badges').innerHTML = isNewhire
+    ? `<span class="chip chip-blue">Anggota Baru</span><span class="chip chip-green">✓ Aktif</span><span class="chip chip-warn">Hari 18/90</span>`
+    : `<span class="chip chip-green">🎍 Buddy / Mentor</span><span class="chip chip-green">✓ Aktif</span><span class="chip chip-purple">3 Mentee</span>`;
+
+  // Progress (always shows new hire orientation progress)
+  mo('modal-prog-pct').textContent   = pct + '%';
+  mo('modal-prog-bar').style.width   = pct + '%';
+  mo('modal-done-count').textContent = done;
+  mo('modal-remain-count').textContent = total - done;
+
+  // Open
+  document.getElementById('profile-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  lucide.createIcons();
+}
+
+function closeProfileModal() {
+  document.getElementById('profile-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleBackdropClick(event) {
+  // Close only if clicking the backdrop itself, not the modal box
+  if (event.target === document.getElementById('profile-modal')) closeProfileModal();
+}
+
+// Quick action handlers inside modal
+function modalSwitchRole() {
+  const next = currentRole === 'newhire' ? 'buddy' : 'newhire';
+  closeProfileModal();
+  setTimeout(() => switchRole(next), 180);
+}
+function modalGoSettings() {
+  closeProfileModal();
+  setTimeout(() => navTo('pengaturan', document.querySelector('[data-page=pengaturan]')), 180);
+}
+function modalGoMilestone() {
+  closeProfileModal();
+  setTimeout(() => navTo('milestone', document.querySelector('[data-page=milestone]')), 180);
+}
+function modalGoLaporan() {
+  closeProfileModal();
+  setTimeout(() => navTo('laporan', document.querySelector('[data-page=laporan]')), 180);
+}
+
+// Close on Escape key
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeProfileModal(); });
+
+// ═══════════════════ TOAST ═══════════════════
+function showToast(message, type='info') {
+  const container = document.getElementById('toast-container');
+  const icons = { success:'check-circle', info:'info', warn:'alert-triangle' };
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<i data-lucide="${icons[type]||'info'}"></i> <span>${message}</span>`;
+  container.appendChild(toast);
+  lucide.createIcons();
+  setTimeout(() => {
+    toast.style.transition = 'opacity .4s, transform .4s';
+    toast.style.opacity = '0'; toast.style.transform = 'translateX(40px)';
+    setTimeout(() => toast.remove(), 400);
+  }, 3500);
+}
+
+// ═══════════════════ INIT ═══════════════════
+function init() {
+  renderMilestones();
+  renderFaq();
+  renderActivity();
+  renderMenteeCards();
+  updateProgress();
+  lucide.createIcons();
+  setTimeout(() => showToast('👋 Selamat datang, Budi! Hari ke-18 orientasimu. Semangat!', 'success'), 800);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
